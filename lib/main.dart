@@ -1,29 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'login_screen.dart';
-import 'sign_up_screen.dart';
-import 'home_screen.dart';
 
 void main() {
-  runApp(const BusMapApp());
+  runApp(const MyApp());
 }
 
-class BusMapApp extends StatelessWidget {
-  const BusMapApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BusMap',
+      title: 'Bus Map Dhaka',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/': (context) => const LoginScreen(),
+        '/map': (context) => const MapScreen(),
       },
+    );
+  }
+}
+
+class MapScreen extends StatelessWidget {
+  const MapScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Map Example'),
+      ),
+      body: FlutterMap(
+        options: const MapOptions(
+          initialCenter: LatLng(23.8103, 90.4125),
+          initialZoom: 13.0,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            subdomains: const ['a', 'b', 'c'],
+            userAgentPackageName: 'com.example.bus_map_dhaka',
+          ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                width: 80.0,
+                height: 80.0,
+                point: LatLng(23.8103, 90.4125),
+                child: Column(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.red, size: 40),
+                    Text('Dhaka'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
