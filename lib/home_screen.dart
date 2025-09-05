@@ -10,7 +10,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> locations = ['Mirpur 1, Dhaka', 'Farmgate, Dhaka', 'Motijheel, Dhaka'];
+  final List<String> locations = [
+    'Mirpur 1, Dhaka',
+    'Farmgate, Dhaka',
+    'Motijheel, Dhaka',
+  ];
   String? start;
   String? destination;
 
@@ -48,7 +52,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: OutlineInputBorder(),
                     ),
                     value: start,
-                    items: locations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc))).toList(),
+                    items: locations
+                        .map(
+                          (loc) =>
+                              DropdownMenuItem(value: loc, child: Text(loc)),
+                        )
+                        .toList(),
                     onChanged: (val) {
                       setState(() {
                         start = val;
@@ -64,7 +73,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       border: OutlineInputBorder(),
                     ),
                     value: destination,
-                    items: locations.map((loc) => DropdownMenuItem(value: loc, child: Text(loc))).toList(),
+                    items: locations
+                        .map(
+                          (loc) =>
+                              DropdownMenuItem(value: loc, child: Text(loc)),
+                        )
+                        .toList(),
                     onChanged: (val) {
                       setState(() {
                         destination = val;
@@ -77,15 +91,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (start != null && destination != null && start != destination)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Present Address: $start', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Present Address: $start',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 4),
-                  Text('Destination: $destination', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Destination: $destination',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 4),
-                  Text('Bus Name: Mirpur Express', style: TextStyle(fontSize: 16, color: Colors.blue)),
+                  Text(
+                    'Bus Name: Mirpur Express',
+                    style: TextStyle(fontSize: 16, color: Colors.blue),
+                  ),
                 ],
               ),
             ),
@@ -99,14 +125,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    urlTemplate:
+                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                     subdomains: const ['a', 'b', 'c'],
                     userAgentPackageName: 'com.example.bus_map_dhaka',
                   ),
                   PolylineLayer(
                     polylines: [
                       Polyline(
-                        points: [getLatLng(start!) ?? LatLng(23.8041, 90.3667), getLatLng(destination!) ?? LatLng(23.8103, 90.4125)],
+                        points: [
+                          getLatLng(start!) ?? LatLng(23.8041, 90.3667),
+                          getLatLng(destination!) ?? LatLng(23.8103, 90.4125),
+                        ],
                         color: Colors.blue,
                         strokeWidth: 4.0,
                       ),
@@ -120,7 +150,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         point: getLatLng(start!) ?? LatLng(23.8041, 90.3667),
                         child: Column(
                           children: [
-                            Icon(Icons.location_on, color: Colors.green, size: 40),
+                            Icon(
+                              Icons.location_on,
+                              color: Colors.green,
+                              size: 40,
+                            ),
                             Text('Start'),
                           ],
                         ),
@@ -128,10 +162,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       Marker(
                         width: 80.0,
                         height: 80.0,
-                        point: getLatLng(destination!) ?? LatLng(23.8103, 90.4125),
+                        point:
+                            getLatLng(destination!) ?? LatLng(23.8103, 90.4125),
                         child: Column(
                           children: [
-                            Icon(Icons.location_on, color: Colors.red, size: 40),
+                            Icon(
+                              Icons.location_on,
+                              color: Colors.red,
+                              size: 40,
+                            ),
                             Text('End'),
                           ],
                         ),
@@ -142,7 +181,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         point: getLatLng(start!) ?? LatLng(23.8041, 90.3667),
                         child: Column(
                           children: [
-                            Icon(Icons.directions_bus, color: Colors.blue, size: 40),
+                            Icon(
+                              Icons.directions_bus,
+                              color: Colors.blue,
+                              size: 40,
+                            ),
                             Text('Mirpur Express'),
                           ],
                         ),
