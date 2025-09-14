@@ -12,8 +12,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   void _login() {
-    // For simplicity, navigate to the map screen directly after login
-    Navigator.pushReplacementNamed(context, '/map');
+    // For simplicity, navigate to the home screen directly after login
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
