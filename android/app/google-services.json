@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "316084797142",
+    "project_id": "busmapdhaka-471121",
+    "storage_bucket": "busmapdhaka-471121.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316084797142:android:abf146bc4a6e70e0d49377",
+        "android_client_info": {
+          "package_name": "com.example.bus_map_dhaka"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6l97KtX4iqmoUTnLT7UR3bnVrUQ5Gl_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
