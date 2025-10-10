@@ -49,10 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     // Center map to current location
     if (loc.latitude != null && loc.longitude != null) {
-      _mapController.move(
-        LatLng(loc.latitude!, loc.longitude!),
-        13.0,
-      );
+      _mapController.move(LatLng(loc.latitude!, loc.longitude!), 13.0);
     }
   }
 
