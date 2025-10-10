@@ -17,6 +17,7 @@ import 'pages/profile_page.dart';
 import 'pages/help_page.dart';
 import 'pages/about_page.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
