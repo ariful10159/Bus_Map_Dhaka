@@ -21,9 +21,7 @@ class AppNavigationDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-              ),
+              decoration: BoxDecoration(color: Colors.transparent),
               accountName: Text(
                 user?.displayName ?? 'User',
                 style: TextStyle(
@@ -38,11 +36,7 @@ class AppNavigationDrawer extends StatelessWidget {
               ),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person,
-                  size: 50,
-                  color: Colors.teal,
-                ),
+                child: Icon(Icons.person, size: 50, color: Colors.teal),
               ),
             ),
             _buildDrawerItem(
@@ -140,7 +134,8 @@ class AppNavigationDrawer extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      onTap: onTap ??
+      onTap:
+          onTap ??
           () {
             Navigator.pop(context); // Close drawer
             if (route != null) {

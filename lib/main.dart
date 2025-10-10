@@ -5,6 +5,15 @@ import 'firebase_options.dart';
 import 'auth_page.dart';
 import 'registration_page.dart';
 import 'home_screen.dart';
+import 'pages/favorites_page.dart';
+import 'pages/bus_routes_page.dart';
+import 'pages/bus_stops_page.dart';
+import 'pages/notifications_page.dart';
+import 'pages/feedback_page.dart';
+import 'pages/settings_page.dart';
+import 'pages/profile_page.dart';
+import 'pages/help_page.dart';
+import 'pages/about_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +36,15 @@ class MyApp extends StatelessWidget {
         '/': (context) => AuthPage(),
         '/register': (context) => RegistrationPage(),
         '/home': (context) => HomeScreen(),
+        '/favorites': (context) => FavoritesPage(),
+        '/bus-routes': (context) => BusRoutesPage(),
+        '/bus-stops': (context) => BusStopsPage(),
+        '/notifications': (context) => NotificationsPage(),
+        '/feedback': (context) => FeedbackPage(),
+        '/settings': (context) => SettingsPage(),
+        '/profile': (context) => ProfilePage(),
+        '/help': (context) => HelpPage(),
+        '/about': (context) => AboutPage(),
       },
     );
   }
