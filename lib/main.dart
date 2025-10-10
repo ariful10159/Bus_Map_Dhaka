@@ -5,6 +5,8 @@ import 'firebase_options.dart';
 import 'auth_page.dart';
 import 'registration_page.dart';
 import 'home_screen.dart';
+import 'admin_login_page.dart';
+import 'admin_home_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/bus_routes_page.dart';
 import 'pages/bus_stops_page.dart';
@@ -36,6 +38,8 @@ class MyApp extends StatelessWidget {
         '/': (context) => AuthPage(),
         '/register': (context) => RegistrationPage(),
         '/home': (context) => HomeScreen(),
+        '/admin-login': (context) => AdminLoginPage(),
+        '/admin-home': (context) => AdminHomePage(),
         '/favorites': (context) => FavoritesPage(),
         '/bus-routes': (context) => BusRoutesPage(),
         '/bus-stops': (context) => BusStopsPage(),
