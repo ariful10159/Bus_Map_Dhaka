@@ -10,14 +10,13 @@ class AuthPage extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
+          // Background Gradient
           Container(
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(
-                  'assets/background.jpg',
-                ), // Add your background image here
-                fit: BoxFit.cover,
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.purple],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
           ),
@@ -39,8 +38,9 @@ class AuthPage extends StatelessWidget {
                         Text(
                           'Welcome Back',
                           style: TextStyle(
-                            fontSize: 24.0,
+                            fontSize: 28.0,
                             fontWeight: FontWeight.bold,
+                            color: Colors.deepPurple,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -86,22 +86,21 @@ class AuthPage extends StatelessWidget {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.0),
                             ),
+                            backgroundColor: Colors.deepPurple,
                           ),
-                          child: Text('Login'),
+                          child: Text(
+                            'Login',
+                            style: TextStyle(fontSize: 18.0),
+                          ),
                         ),
                         TextButton(
                           onPressed: () {
-                            // Navigate to sign-up page
                             Navigator.pushNamed(context, '/register');
                           },
-                          child: Text('Don\'t have an account? Sign Up'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            // Navigate to forgot password page
-                            Navigator.pushNamed(context, '/forgot-password');
-                          },
-                          child: Text('Forgot Password?'),
+                          child: Text(
+                            'Don\'t have an account? Register',
+                            style: TextStyle(color: Colors.deepPurple),
+                          ),
                         ),
                       ],
                     ),
@@ -114,4 +113,13 @@ class AuthPage extends StatelessWidget {
       ),
     );
   }
+}
+
+void main() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false, // Disable the debug banner
+      home: AuthPage(),
+    ),
+  );
 }
