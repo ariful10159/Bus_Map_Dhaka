@@ -70,9 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result is BusRoute) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => RouteDetailPage(route: result),
-        ),
+        MaterialPageRoute(builder: (context) => RouteDetailPage(route: result)),
       );
     } else if (result is BusStop) {
       // Navigate to the stop location on the map
@@ -82,9 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _isSearching = false;
         _searchResults = [];
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Showing ${result.name} on map')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Showing ${result.name} on map')));
     }
   }
 
@@ -153,73 +151,81 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: _isSearching
                       ? _searchResults.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.search_off,
-                                      size: 64, color: Colors.grey),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No results found',
-                                    style: TextStyle(
-                                      fontSize: 18,
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 64,
                                       color: Colors.grey,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              itemCount: _searchResults.length,
-                              itemBuilder: (context, index) {
-                                final result = _searchResults[index];
-                                if (result is BusRoute) {
-                                  return Card(
-                                    margin: EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: Colors.teal,
-                                        child: Icon(Icons.directions_bus,
-                                            color: Colors.white),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'No results found',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.grey,
                                       ),
-                                      title: Text(result.name),
-                                      subtitle: Text(
-                                        '${result.startPoint} → ${result.endPoint}',
-                                      ),
-                                      trailing: Icon(Icons.arrow_forward_ios,
-                                          size: 16),
-                                      onTap: () => _onSearchResultTap(result),
                                     ),
-                                  );
-                                } else if (result is BusStop) {
-                                  return Card(
-                                    margin: EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    child: ListTile(
-                                      leading: CircleAvatar(
-                                        backgroundColor: Colors.orange,
-                                        child: Icon(Icons.location_on,
-                                            color: Colors.white),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: _searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final result = _searchResults[index];
+                                  if (result is BusRoute) {
+                                    return Card(
+                                      margin: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
                                       ),
-                                      title: Text(result.name),
-                                      subtitle: Text(
-                                        '${result.routes.length} route(s) available',
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: Colors.teal,
+                                          child: Icon(
+                                            Icons.directions_bus,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        title: Text(result.name),
+                                        subtitle: Text(
+                                          '${result.startPoint} → ${result.endPoint}',
+                                        ),
+                                        trailing: Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 16,
+                                        ),
+                                        onTap: () => _onSearchResultTap(result),
                                       ),
-                                      trailing:
-                                          Icon(Icons.map, size: 16),
-                                      onTap: () => _onSearchResultTap(result),
-                                    ),
-                                  );
-                                }
-                                return SizedBox();
-                              },
-                            )
+                                    );
+                                  } else if (result is BusStop) {
+                                    return Card(
+                                      margin: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundColor: Colors.orange,
+                                          child: Icon(
+                                            Icons.location_on,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        title: Text(result.name),
+                                        subtitle: Text(
+                                          '${result.routes.length} route(s) available',
+                                        ),
+                                        trailing: Icon(Icons.map, size: 16),
+                                        onTap: () => _onSearchResultTap(result),
+                                      ),
+                                    );
+                                  }
+                                  return SizedBox();
+                                },
+                              )
                       : Column(
                           children: [
                             // Map Section
@@ -228,7 +234,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   FlutterMap(
                                     mapController: _mapController,
-                                    options: MapOptions(center: center, zoom: 13.0),
+                                    options: MapOptions(
+                                      center: center,
+                                      zoom: 13.0,
+                                    ),
                                     children: [
                                       TileLayer(
                                         urlTemplate:
@@ -283,9 +292,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                 itemCount: 10,
                                 itemBuilder: (context, index) {
                                   return ListTile(
-                                    leading: Icon(Icons.directions_bus, color: Colors.teal),
+                                    leading: Icon(
+                                      Icons.directions_bus,
+                                      color: Colors.teal,
+                                    ),
                                     title: Text('Bus Route ${index + 1}'),
-                                    subtitle: Text('Details about route ${index + 1}'),
+                                    subtitle: Text(
+                                      'Details about route ${index + 1}',
+                                    ),
                                     trailing: Icon(
                                       Icons.arrow_forward_ios,
                                       color: Colors.teal,

@@ -50,7 +50,11 @@ class RouteDetailPage extends StatelessWidget {
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          Icon(Icons.location_on, color: Colors.white70, size: 20),
+                          Icon(
+                            Icons.location_on,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -66,7 +70,11 @@ class RouteDetailPage extends StatelessWidget {
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.attach_money, color: Colors.white70, size: 20),
+                          Icon(
+                            Icons.attach_money,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Fare: ${route.fare}',
@@ -114,7 +122,9 @@ class RouteDetailPage extends StatelessWidget {
                             width: 24,
                             height: 24,
                             decoration: BoxDecoration(
-                              color: isFirst || isLast ? Colors.teal : Colors.teal.shade200,
+                              color: isFirst || isLast
+                                  ? Colors.teal
+                                  : Colors.teal.shade200,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: Colors.teal.shade700,
