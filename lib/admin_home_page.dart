@@ -37,6 +37,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
         'createdBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
       });
 
+      // Create notification for users
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'type': 'added',
+        'title': 'New Bus Route Added',
+        'message':
+            '${_startPointController.text.trim()} → ${_endPointController.text.trim()}',
+        'routeName': _busNameController.text.trim(),
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+        'createdBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
+      });
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

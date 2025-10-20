@@ -9,12 +9,29 @@ class AdminBusRoutesPage extends StatefulWidget {
 }
 
 class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
-  Future<void> _deleteRoute(String docId) async {
+  Future<void> _deleteRoute(
+    String docId,
+    String busName,
+    String startPoint,
+    String endPoint,
+  ) async {
     try {
       await FirebaseFirestore.instance
           .collection('bus_routes')
           .doc(docId)
           .delete();
+
+      // Create notification for users
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'type': 'deleted',
+        'title': 'Bus Route Removed',
+        'message': '$startPoint → $endPoint',
+        'routeName': busName,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+        'createdBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('✅ Route deleted successfully'),
@@ -31,7 +48,12 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
     }
   }
 
-  Future<void> _showDeleteConfirmation(String docId, String busName) async {
+  Future<void> _showDeleteConfirmation(
+    String docId,
+    String busName,
+    String startPoint,
+    String endPoint,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -51,7 +73,7 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
       ),
     );
     if (confirmed == true) {
-      await _deleteRoute(docId);
+      await _deleteRoute(docId, busName, startPoint, endPoint);
     }
   }
 
@@ -159,6 +181,19 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
               'updatedAt': FieldValue.serverTimestamp(),
               'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
             });
+
+        // Create notification for users
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'type': 'updated',
+          'title': 'Bus Route Updated',
+          'message':
+              '${startPointController.text.trim()} → ${endPointController.text.trim()}',
+          'routeName': busNameController.text.trim(),
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
+          'createdBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✅ Route updated successfully'),
@@ -329,8 +364,12 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
                               IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
                                 tooltip: 'Delete',
-                                onPressed: () =>
-                                    _showDeleteConfirmation(doc.id, busName),
+                                onPressed: () => _showDeleteConfirmation(
+                                  doc.id,
+                                  busName,
+                                  start,
+                                  end,
+                                ),
                               ),
                             ],
                           ),

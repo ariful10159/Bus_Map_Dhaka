@@ -36,6 +36,7 @@ dependencies:
   flutter_map: ^4.0.0
   latlong2: ^0.8.1
   location: ^5.0.0
+  timeago: ^3.7.0
 
 dev_dependencies:
   flutter_test:
