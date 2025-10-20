@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pages/admin_bus_routes_page.dart';
+import 'widgets/admin_navigation_drawer.dart';
 
 class AdminHomePage extends StatefulWidget {
   @override
@@ -81,6 +82,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
         ],
       ),
+      drawer: AdminNavigationDrawer(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

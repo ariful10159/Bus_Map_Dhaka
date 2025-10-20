@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/admin_navigation_drawer.dart';
 
 class AdminBusRoutesPage extends StatefulWidget {
   @override
@@ -10,7 +11,10 @@ class AdminBusRoutesPage extends StatefulWidget {
 class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
   Future<void> _deleteRoute(String docId) async {
     try {
-      await FirebaseFirestore.instance.collection('bus_routes').doc(docId).delete();
+      await FirebaseFirestore.instance
+          .collection('bus_routes')
+          .doc(docId)
+          .delete();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('✅ Route deleted successfully'),
@@ -52,11 +56,21 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
   }
 
   Future<void> _showEditDialog(String docId, Map<String, dynamic> data) async {
-    final busNameController = TextEditingController(text: data['busName'] ?? '');
-    final startPointController = TextEditingController(text: data['startPoint'] ?? '');
-    final endPointController = TextEditingController(text: data['endPoint'] ?? '');
-    final costController = TextEditingController(text: data['cost']?.toString() ?? '');
-    final scheduleController = TextEditingController(text: data['schedule']?.toString() ?? '');
+    final busNameController = TextEditingController(
+      text: data['busName'] ?? '',
+    );
+    final startPointController = TextEditingController(
+      text: data['startPoint'] ?? '',
+    );
+    final endPointController = TextEditingController(
+      text: data['endPoint'] ?? '',
+    );
+    final costController = TextEditingController(
+      text: data['cost']?.toString() ?? '',
+    );
+    final scheduleController = TextEditingController(
+      text: data['schedule']?.toString() ?? '',
+    );
     final formKey = GlobalKey<FormState>();
 
     final result = await showDialog<bool>(
@@ -72,19 +86,22 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
                 TextFormField(
                   controller: busNameController,
                   decoration: InputDecoration(labelText: 'Bus Name'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 SizedBox(height: 12),
                 TextFormField(
                   controller: startPointController,
                   decoration: InputDecoration(labelText: 'Start Point'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 SizedBox(height: 12),
                 TextFormField(
                   controller: endPointController,
                   decoration: InputDecoration(labelText: 'End Point'),
-                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) =>
+                      v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 SizedBox(height: 12),
                 TextFormField(
@@ -128,15 +145,20 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
 
     if (result == true) {
       try {
-        await FirebaseFirestore.instance.collection('bus_routes').doc(docId).update({
-          'busName': busNameController.text.trim(),
-          'startPoint': startPointController.text.trim(),
-          'endPoint': endPointController.text.trim(),
-          'cost': double.parse(costController.text.trim()),
-          'schedule': scheduleController.text.trim().isEmpty ? null : scheduleController.text.trim(),
-          'updatedAt': FieldValue.serverTimestamp(),
-          'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
-        });
+        await FirebaseFirestore.instance
+            .collection('bus_routes')
+            .doc(docId)
+            .update({
+              'busName': busNameController.text.trim(),
+              'startPoint': startPointController.text.trim(),
+              'endPoint': endPointController.text.trim(),
+              'cost': double.parse(costController.text.trim()),
+              'schedule': scheduleController.text.trim().isEmpty
+                  ? null
+                  : scheduleController.text.trim(),
+              'updatedAt': FieldValue.serverTimestamp(),
+              'updatedBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
+            });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('✅ Route updated successfully'),
@@ -167,6 +189,7 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
         title: Text('Manage Bus Routes'),
         backgroundColor: Colors.deepPurple,
       ),
+      drawer: AdminNavigationDrawer(),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('bus_routes')
@@ -185,7 +208,11 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.directions_bus, size: 100, color: Colors.deepPurple),
+                  Icon(
+                    Icons.directions_bus,
+                    size: 100,
+                    color: Colors.deepPurple,
+                  ),
                   SizedBox(height: 20),
                   Text(
                     'No bus routes found',
@@ -204,17 +231,22 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
             itemBuilder: (context, index) {
               final doc = docs[index];
               final data = (doc.data() as Map<String, dynamic>?) ?? {};
-              final busName = data['busName'] ?? data['routeNumber'] ?? 'Unknown';
+              final busName =
+                  data['busName'] ?? data['routeNumber'] ?? 'Unknown';
               final start = data['startPoint'] ?? '-';
               final end = data['endPoint'] ?? '-';
-              final cost = data['cost'] != null ? data['cost'].toString() : 'N/A';
+              final cost = data['cost'] != null
+                  ? data['cost'].toString()
+                  : 'N/A';
               final schedule = data['schedule']?.toString();
               final createdBy = data['createdBy'] ?? 'admin';
 
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 8),
                 elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: Column(
@@ -237,23 +269,53 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
                                 SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    Icon(Icons.location_on, size: 16, color: Colors.green),
+                                    Icon(
+                                      Icons.location_on,
+                                      size: 16,
+                                      color: Colors.green,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(start, style: TextStyle(fontSize: 14)),
                                     SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
                                     SizedBox(width: 8),
-                                    Icon(Icons.flag, size: 16, color: Colors.red),
+                                    Icon(
+                                      Icons.flag,
+                                      size: 16,
+                                      color: Colors.red,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(end, style: TextStyle(fontSize: 14)),
                                   ],
                                 ),
                                 SizedBox(height: 8),
-                                Text('Schedule: ${schedule ?? 'N/A'}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                                Text(
+                                  'Schedule: ${schedule ?? 'N/A'}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
                                 SizedBox(height: 4),
-                                Text('Cost: ৳$cost', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                Text(
+                                  'Cost: ৳$cost',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 SizedBox(height: 4),
-                                Text('By: $createdBy', style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                                Text(
+                                  'By: $createdBy',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -267,7 +329,8 @@ class _AdminBusRoutesPageState extends State<AdminBusRoutesPage> {
                               IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
                                 tooltip: 'Delete',
-                                onPressed: () => _showDeleteConfirmation(doc.id, busName),
+                                onPressed: () =>
+                                    _showDeleteConfirmation(doc.id, busName),
                               ),
                             ],
                           ),
