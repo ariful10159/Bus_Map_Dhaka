@@ -15,6 +15,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   final TextEditingController _startPointController = TextEditingController();
   final TextEditingController _endPointController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
+  final TextEditingController _scheduleController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _saveBusRoute() async {
@@ -31,6 +32,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         'startPoint': _startPointController.text.trim(),
         'endPoint': _endPointController.text.trim(),
         'cost': double.parse(_costController.text.trim()),
+        'schedule': _scheduleController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'createdBy': FirebaseAuth.instance.currentUser?.email ?? 'admin',
       });
@@ -49,6 +51,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       _startPointController.clear();
       _endPointController.clear();
       _costController.clear();
+      _scheduleController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -348,6 +351,33 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             return null;
                           },
                         ),
+                        SizedBox(height: 16),
+
+                        // Schedule Field
+                        TextFormField(
+                          controller: _scheduleController,
+                          decoration: InputDecoration(
+                            labelText: 'Schedule',
+                            hintText:
+                                'e.g., 6:00 AM, 7:30 AM, 9:00 AM, 12:00 PM',
+                            prefixIcon: Icon(
+                              Icons.access_time,
+                              color: Colors.deepPurple,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.deepPurple.shade50,
+                          ),
+                          maxLines: 2,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter bus schedule';
+                            }
+                            return null;
+                          },
+                        ),
                         SizedBox(height: 24),
 
                         // Save Button
@@ -432,6 +462,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     _startPointController.dispose();
     _endPointController.dispose();
     _costController.dispose();
+    _scheduleController.dispose();
     super.dispose();
   }
 }
