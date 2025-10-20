@@ -3,7 +3,9 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services") // Firebase
+
+    // Add the Google services Gradle plugin
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -21,12 +23,14 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.bus_map_dhaka" // TODO: change to a unique id (e.g. com.yourname.busmapdhaka)
-        minSdk = 23 // Firebase Auth & latest plugins often require 21+, set 23 for modern baseline
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.bus_map_dhaka"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        multiDexEnabled = true
     }
 
     buildTypes {
@@ -43,10 +47,14 @@ flutter {
 }
 
 dependencies {
-    // Firebase Bill of Materials controls versions
+    // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+
+    // Add the dependencies for Firebase products you want to use
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth")
-    // Multidex (keep if methods exceed 64K)
-    implementation("androidx.multidex:multidex:2.0.1")
+
+    // Add the dependencies for any other desired Firebase products
+    // https://firebase.google.com/docs/android/setup#available-libraries
 }
+
+apply plugin: "com.google.gms.google-services"
