@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'pages/admin_bus_routes_page.dart';
 
 class AdminHomePage extends StatefulWidget {
   @override
@@ -136,6 +137,84 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+
+              // Quick Actions Section
+              Text(
+                'Quick Actions',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple.shade900,
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Manage Routes Button
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminBusRoutesPage(),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.deepPurple.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.list_alt,
+                            color: Colors.deepPurple,
+                            size: 30,
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Manage Bus Routes',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'View, edit, and delete existing routes',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
