@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminLoginPage extends StatefulWidget {
   @override
@@ -11,14 +12,6 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // Admin emails list - Add your admin emails here
-  final List<String> _adminEmails = [
-    'admin@busmap.com',
-    'superadmin@busmap.com',
-    'admin@busmapdhaka.com',
-    // Add more admin emails as needed
-  ];
-
   Future<void> _adminLogin() async {
     setState(() {
       _isLoading = true;
@@ -28,25 +21,22 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
 
-      // Check if email is in admin list
-      if (!_adminEmails.contains(email.toLowerCase())) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Unauthorized! Admin access only.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
       // Login with Firebase
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      final isAdmin = await _validateAdminAccount(credential.user);
+      if (!isAdmin) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ This account is not registered as an admin.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       // Navigate to Admin Home
       Navigator.pushReplacementNamed(context, '/admin-home');
@@ -190,15 +180,29 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                   ),
                   SizedBox(height: 20),
 
-                  // Back to User Login
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Back to User Login',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                  // Links
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          'User login',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/admin-register');
+                        },
+                        child: const Text(
+                          'New admin? Register',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -214,5 +218,24 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<bool> _validateAdminAccount(User? user) async {
+    if (user == null) return false;
+
+    final adminDoc = await FirebaseFirestore.instance
+        .collection('admins')
+        .doc(user.uid)
+        .get();
+
+    if (!adminDoc.exists) {
+      await FirebaseAuth.instance.signOut();
+      return false;
+    }
+
+    await adminDoc.reference.update({
+      'lastLoginAt': FieldValue.serverTimestamp(),
+    });
+    return true;
   }
 }

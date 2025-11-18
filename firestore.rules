@@ -3,23 +3,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /feedback/{docId} {
-      // Only logged-in users can create feedback
+      // Only logged-in users can create feedback for themselves
       allow create: if request.auth != null 
                     && request.resource.data.uid == request.auth.uid;
 
-      // User can read only their own feedback
+      // Allow the owner OR an admin (custom claim) to read entries
       allow read: if request.auth != null
-                  && request.auth.uid == resource.data.uid;
+                  && (request.auth.uid == resource.data.uid
+                      || request.auth.token.admin == true);
 
-      // User can update/delete only their own feedback
+      // Allow updates/deletes by the owner or admins
       allow update, delete: if request.auth != null
-                            && request.auth.uid == resource.data.uid;
+                            && (request.auth.uid == resource.data.uid
+                                || request.auth.token.admin == true);
     }
 
-    // Optional: Admin access
-    match /admins/{adminId} {
-      allow read, write: if request.auth != null 
-                         && request.auth.token.admin == true;
+    // Allow admin self-registration and access
+    match /admins/{uid} {
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow read, update, delete: if request.auth != null && resource.data.email == request.auth.token.email;
     }
   }
 }

@@ -253,82 +253,122 @@ class _FeedbackPageState extends State<FeedbackPage> {
   }
 
   Widget _buildUserFeedbackList(User user) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('feedback')
-          .where('uid', isEqualTo: user.uid)
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+    // Check if user is admin by looking for their document in 'admins' collection
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      future: FirebaseFirestore.instance
+          .collection('admins')
+          .doc(user.uid)
+          .get(),
+      builder: (context, adminSnapshot) {
+        bool isAdmin = false;
+        if (adminSnapshot.connectionState == ConnectionState.done &&
+            adminSnapshot.hasData) {
+          isAdmin = adminSnapshot.data?.exists ?? false;
         }
 
-        if (snapshot.hasError) {
-          debugPrint('Feedback stream error: ${snapshot.error}');
-          return _buildInfoTile(
-            icon: Icons.error_outline,
-            message:
-                'Unable to load your feedback right now.\n${snapshot.error}',
-          );
-        }
+        // Query all feedback if admin, else only user's feedback
+        final feedbackQuery = isAdmin
+            ? FirebaseFirestore.instance
+                  .collection('feedback')
+                  .orderBy('createdAt', descending: true)
+            : FirebaseFirestore.instance
+                  .collection('feedback')
+                  .where('uid', isEqualTo: user.uid)
+                  .orderBy('createdAt', descending: true);
 
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) {
-          return _buildInfoTile(
-            icon: Icons.inbox_outlined,
-            message: 'No feedback submitted yet. Your entries show up here.',
-          );
-        }
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: feedbackQuery.snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: docs.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final data = docs[index].data();
-            final createdAt = data['createdAt'] as Timestamp?;
-            final title = data['title'] as String? ?? 'Untitled';
-            final message = data['message'] as String? ?? '';
-            final type = data['type'] as String? ?? 'General';
+            if (snapshot.hasError) {
+              debugPrint('Feedback stream error: ${snapshot.error}');
+              return _buildInfoTile(
+                icon: Icons.error_outline,
+                message:
+                    'Unable to load feedback right now.\n${snapshot.error}',
+              );
+            }
 
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.grey.shade100,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return _buildInfoTile(
+                icon: Icons.inbox_outlined,
+                message: isAdmin
+                    ? 'No feedback submitted yet.'
+                    : 'No feedback submitted yet. Your entries show up here.',
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: docs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final data = docs[index].data();
+                final createdAt = data['createdAt'] as Timestamp?;
+                final title = data['title'] as String? ?? 'Untitled';
+                final message = data['message'] as String? ?? '';
+                final type = data['type'] as String? ?? 'General';
+                final email = data['email'] as String? ?? '';
+
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.grey.shade100,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          title,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Chip(
+                            label: Text(type),
+                            backgroundColor: Colors.teal.shade50,
+                            labelStyle: const TextStyle(color: Colors.teal),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        message,
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+                      if (isAdmin && email.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'User: $email',
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.black54,
                           ),
                         ),
-                      ),
-                      Chip(
-                        label: Text(type),
-                        backgroundColor: Colors.teal.shade50,
-                        labelStyle: const TextStyle(color: Colors.teal),
+                      ],
+                      const SizedBox(height: 12),
+                      Text(
+                        _formatTimestamp(createdAt),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(message, style: const TextStyle(color: Colors.black87)),
-                  const SizedBox(height: 12),
-                  Text(
-                    _formatTimestamp(createdAt),
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         );

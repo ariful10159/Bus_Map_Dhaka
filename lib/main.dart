@@ -6,6 +6,7 @@ import 'auth_page.dart';
 import 'registration_page.dart';
 import 'home_screen.dart';
 import 'admin_login_page.dart';
+import 'admin_registration_page.dart';
 import 'admin_home_page.dart';
 import 'pages/favorites_page.dart';
 import 'pages/bus_routes_page.dart';
@@ -16,7 +17,6 @@ import 'pages/settings_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/help_page.dart';
 import 'pages/about_page.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +40,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => RegistrationPage(),
         '/home': (context) => HomeScreen(),
         '/admin-login': (context) => AdminLoginPage(),
+        '/admin-register': (context) => const AdminRegistrationPage(),
         '/admin-home': (context) => AdminHomePage(),
         '/favorites': (context) => FavoritesPage(),
         '/bus-routes': (context) => BusRoutesPage(),
