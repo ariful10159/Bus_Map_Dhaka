@@ -26,12 +26,18 @@ class _FeedbackPageState extends State<FeedbackPage> {
   Future<void> _submitFeedback() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to send feedback.')),
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
     try {
       await FirebaseFirestore.instance.collection('feedback').add({
-        'uid': user?.uid,
-        'email': user?.email,
+        'uid': user.uid,
+        'email': user.email,
         'type': _selectedType,
         'title': _titleController.text.trim(),
         'message': _messageController.text.trim(),
