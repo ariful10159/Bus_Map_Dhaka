@@ -5,17 +5,17 @@ service cloud.firestore {
     match /feedback/{docId} {
       // Only logged-in users can create feedback for themselves
       allow create: if request.auth != null 
-                    && request.resource.data.uid == request.auth.uid;
+            && request.resource.data.uid == request.auth.uid;
 
-      // Allow the owner OR an admin (custom claim) to read entries
+      // Allow the owner OR any user with an admin document to read entries
       allow read: if request.auth != null
-                  && (request.auth.uid == resource.data.uid
-                      || request.auth.token.admin == true);
+            && (request.auth.uid == resource.data.uid
+              || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
 
       // Allow updates/deletes by the owner or admins
       allow update, delete: if request.auth != null
-                            && (request.auth.uid == resource.data.uid
-                                || request.auth.token.admin == true);
+                && (request.auth.uid == resource.data.uid
+                  || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
     }
 
     // Allow admin self-registration and access
