@@ -8,14 +8,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bus_map/main.dart';
+import 'package:bus_map/home_screen.dart';
 
 void main() {
-  testWidgets('OpenStreetMap loads and marker is visible', (WidgetTester tester) async {
-    await tester.pumpWidget(MyApp());
-    // Check for map title
-    expect(find.text('OpenStreetMap Example'), findsOneWidget);
-    // Check for marker icon
-    expect(find.byIcon(Icons.location_on), findsOneWidget);
+  testWidgets('Map screen shows app bar and search action', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: HomeScreen(enableLocation: false)),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bus Map Dhaka'), findsOneWidget);
+    expect(find.text('Search Routes'), findsOneWidget);
+    expect(find.byIcon(Icons.search), findsOneWidget);
   });
 }

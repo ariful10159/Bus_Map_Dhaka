@@ -6,6 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'widgets/navigation_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, this.enableLocation = true});
+
+  final bool enableLocation;
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -29,7 +33,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _mapController = MapController();
-    _getLocation();
+    if (widget.enableLocation) {
+      _getLocation();
+    } else {
+      _loading = false;
+    }
   }
 
   Future<void> _getLocation() async {
