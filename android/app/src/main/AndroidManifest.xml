@@ -3,6 +3,9 @@
         android:label="bus_map_dhaka"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAE871NNLvZtyq6WPK193xYT653YNRAe68"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
