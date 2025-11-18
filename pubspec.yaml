@@ -33,10 +33,13 @@ dependencies:
   firebase_core: ^3.15.2
   firebase_auth: ^5.7.0
   cloud_firestore: ^5.6.12
+  firebase_storage: ^12.3.4
+  image_picker: ^0.8.7+5   # পুরনো 1.1.2 এর জায়গায় এটা ব্যবহার করো
   flutter_map: ^4.0.0
   latlong2: ^0.8.1
   location: ^5.0.0
   timeago: ^3.7.0
+
 
 dev_dependencies:
   flutter_test:
