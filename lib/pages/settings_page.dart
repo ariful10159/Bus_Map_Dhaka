@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -9,44 +11,151 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController(
-    text: 'traveler@example.com',
-  );
-  final TextEditingController _phoneController = TextEditingController(
-    text: '+8801XXXXXXXXX',
-  );
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
 
   String _selectedLanguage = 'English';
   bool _notificationsEnabled = true;
+  bool _isSavingAccount = false;
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _hydrateFromFirebase();
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _phoneController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _hydrateFromFirebase() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    _emailController.text = user.email ?? '';
+    _phoneController.text = user.displayName ?? '';
+
+    final profile = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    if (!profile.exists) return;
+    final data = profile.data() ?? {};
+    setState(() {
+      _selectedLanguage = (data['language'] as String?) ?? _selectedLanguage;
+      _notificationsEnabled =
+          (data['notificationsEnabled'] as bool?) ?? _notificationsEnabled;
+      _phoneController.text =
+          (data['phone'] as String?) ?? _phoneController.text;
+    });
   }
 
   void _changeLanguage(String? value) {
     if (value == null) return;
     setState(() => _selectedLanguage = value);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Language set to $_selectedLanguage')),
-    );
+    _persistPreferences();
   }
 
   void _toggleNotifications(bool value) {
     setState(() => _notificationsEnabled = value);
+    _persistPreferences();
   }
 
-  void _saveAccount() {
+  Future<void> _persistPreferences() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'language': _selectedLanguage,
+      'notificationsEnabled': _notificationsEnabled,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Preferences synced to Firebase')),
+    );
+  }
+
+  Future<void> _saveAccount() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Account details updated')));
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active user session found.')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingAccount = true);
+
+    try {
+      final currentPassword = _currentPasswordController.text.trim();
+      final newPassword = _newPasswordController.text.trim();
+      final newEmail = _emailController.text.trim();
+      final phone = _phoneController.text.trim();
+
+      if ((newEmail != user.email || newPassword.isNotEmpty) &&
+          currentPassword.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'missing-password',
+          message: 'Please enter your current password to update credentials.',
+        );
+      }
+
+      if ((newEmail != user.email || newPassword.isNotEmpty) &&
+          currentPassword.isNotEmpty) {
+        final credential = EmailAuthProvider.credential(
+          email: user.email ?? newEmail,
+          password: currentPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
+      }
+
+      if (newEmail.isNotEmpty && newEmail != user.email) {
+        await user.updateEmail(newEmail);
+      }
+
+      if (newPassword.isNotEmpty) {
+        await user.updatePassword(newPassword);
+        _newPasswordController.clear();
+      }
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'email': newEmail,
+        'phone': phone,
+        'language': _selectedLanguage,
+        'notificationsEnabled': _notificationsEnabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      _currentPasswordController.clear();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account details updated in Firebase')),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Failed to update account.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingAccount = false);
+      }
+    }
   }
 
-  void _logout() {
-    // TODO: Hook into authentication service.
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -174,6 +283,55 @@ class _SettingsPageState extends State<SettingsPage> {
                           return null;
                         },
                       ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _currentPasswordController,
+                        obscureText: _obscureCurrentPassword,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureCurrentPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureCurrentPassword =
+                                  !_obscureCurrentPassword,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _newPasswordController,
+                        obscureText: _obscureNewPassword,
+                        decoration: InputDecoration(
+                          labelText: 'New Password (optional)',
+                          prefixIcon: const Icon(Icons.lock_reset),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureNewPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () => setState(
+                              () => _obscureNewPassword = !_obscureNewPassword,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value != null &&
+                              value.isNotEmpty &&
+                              value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
                       const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
@@ -185,9 +343,20 @@ class _SettingsPageState extends State<SettingsPage> {
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          onPressed: _saveAccount,
+                          onPressed: _isSavingAccount ? null : _saveAccount,
                           icon: const Icon(Icons.save_alt),
-                          label: const Text('Save Changes'),
+                          label: _isSavingAccount
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text('Save Changes'),
                         ),
                       ),
                     ],
