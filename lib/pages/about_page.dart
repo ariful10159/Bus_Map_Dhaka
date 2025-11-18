@@ -96,10 +96,7 @@ about timing or fare changes.''',
           ),
           const SizedBox(height: 8),
           if (body != null)
-            Text(
-              body,
-              style: const TextStyle(fontSize: 15, height: 1.4),
-            ),
+            Text(body, style: const TextStyle(fontSize: 15, height: 1.4)),
           if (bullets != null)
             ...bullets.map(
               (item) => Padding(
