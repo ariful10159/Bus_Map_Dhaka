@@ -7,6 +7,8 @@ class AppNavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email ?? 'user@example.com';
+    final uid = user?.uid ?? 'Unavailable';
 
     return Drawer(
       child: Container(
@@ -30,9 +32,17 @@ class AppNavigationDrawer extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              accountEmail: Text(
-                user?.email ?? 'user@example.com',
-                style: TextStyle(color: Colors.white70),
+              accountEmail: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(email, style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'UID: $uid',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,

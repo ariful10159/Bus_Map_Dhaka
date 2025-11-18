@@ -67,148 +67,165 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Feedback / Report Issue'),
         backgroundColor: Colors.teal,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(Icons.feedback, size: 90, color: Colors.teal),
-            const SizedBox(height: 12),
-            const Text(
-              'We value your feedback',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Share bugs, route issues, or suggestions so we can improve Bus Map Dhaka.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black54),
-            ),
-            const SizedBox(height: 24),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: _selectedType,
-                    decoration: const InputDecoration(
-                      labelText: 'Feedback Type',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.category_outlined),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'App Issue',
-                        child: Text('App Issue'),
+      body: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, userSnapshot) {
+          final user = userSnapshot.data;
+          Widget submissionsSection;
+
+          if (userSnapshot.connectionState == ConnectionState.waiting) {
+            submissionsSection = const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          } else if (user == null) {
+            submissionsSection = _buildAuthRequiredMessage();
+          } else {
+            submissionsSection = _buildUserFeedbackList(user);
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.feedback, size: 90, color: Colors.teal),
+                const SizedBox(height: 12),
+                const Text(
+                  'We value your feedback',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Share bugs, route issues, or suggestions so we can improve Bus Map Dhaka.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54),
+                ),
+                const SizedBox(height: 24),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: _selectedType,
+                        decoration: const InputDecoration(
+                          labelText: 'Feedback Type',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category_outlined),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'App Issue',
+                            child: Text('App Issue'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Bus Route Issue',
+                            child: Text('Bus Route Issue'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Service Experience',
+                            child: Text('Service Experience'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Suggestion',
+                            child: Text('Suggestion'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Other',
+                            child: Text('Other'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedType = value);
+                          }
+                        },
                       ),
-                      DropdownMenuItem(
-                        value: 'Bus Route Issue',
-                        child: Text('Bus Route Issue'),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Subject / Title',
+                          prefixIcon: Icon(Icons.title),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a short title';
+                          }
+                          return null;
+                        },
                       ),
-                      DropdownMenuItem(
-                        value: 'Service Experience',
-                        child: Text('Service Experience'),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _messageController,
+                        maxLines: 6,
+                        decoration: const InputDecoration(
+                          labelText: 'Describe the issue or suggestion',
+                          alignLabelWithHint: true,
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please provide some details';
+                          }
+                          if (value.trim().length < 20) {
+                            return 'Please add a bit more detail (min 20 characters)';
+                          }
+                          return null;
+                        },
                       ),
-                      DropdownMenuItem(
-                        value: 'Suggestion',
-                        child: Text('Suggestion'),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: _isSubmitting ? null : _submitFeedback,
+                          icon: const Icon(Icons.send_rounded),
+                          label: _isSubmitting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text('Submit Feedback'),
+                        ),
                       ),
-                      DropdownMenuItem(value: 'Other', child: Text('Other')),
                     ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _selectedType = value);
-                      }
-                    },
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Subject / Title',
-                      prefixIcon: Icon(Icons.title),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a short title';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _messageController,
-                    maxLines: 6,
-                    decoration: const InputDecoration(
-                      labelText: 'Describe the issue or suggestion',
-                      alignLabelWithHint: true,
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please provide some details';
-                      }
-                      if (value.trim().length < 20) {
-                        return 'Please add a bit more detail (min 20 characters)';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      onPressed: _isSubmitting ? null : _submitFeedback,
-                      icon: const Icon(Icons.send_rounded),
-                      label: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : const Text('Submit Feedback'),
+                ),
+                const SizedBox(height: 32),
+                const Divider(),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Your submissions',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                submissionsSection,
+              ],
             ),
-            const SizedBox(height: 32),
-            const Divider(),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Your submissions',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (user == null)
-              _buildAuthRequiredMessage()
-            else
-              _buildUserFeedbackList(user),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -248,9 +265,11 @@ class _FeedbackPageState extends State<FeedbackPage> {
         }
 
         if (snapshot.hasError) {
+          debugPrint('Feedback stream error: ${snapshot.error}');
           return _buildInfoTile(
             icon: Icons.error_outline,
-            message: 'Unable to load your feedback right now.',
+            message:
+                'Unable to load your feedback right now.\n${snapshot.error}',
           );
         }
 

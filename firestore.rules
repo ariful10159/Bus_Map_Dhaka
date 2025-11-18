@@ -1,24 +1,25 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
-      return request.auth != null;
+
+    match /feedback/{docId} {
+      // Only logged-in users can create feedback
+      allow create: if request.auth != null 
+                    && request.resource.data.uid == request.auth.uid;
+
+      // User can read only their own feedback
+      allow read: if request.auth != null
+                  && request.auth.uid == resource.data.uid;
+
+      // User can update/delete only their own feedback
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.uid;
     }
 
-    function isAdmin() {
-      return isSignedIn() &&
-        ((request.auth.token.admin == true) ||
-          exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
-    }
-
-    match /feedback/{feedbackId} {
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
-      allow read: if isSignedIn() && (isAdmin() || resource.data.uid == request.auth.uid);
-      allow update, delete: if false;
-    }
-
-    match /{document=**} {
-      allow read, write: if false;
+    // Optional: Admin access
+    match /admins/{adminId} {
+      allow read, write: if request.auth != null 
+                         && request.auth.token.admin == true;
     }
   }
 }
