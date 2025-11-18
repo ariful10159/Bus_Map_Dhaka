@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../pages/admin_bus_routes_page.dart';
+import '../pages/admin_feedback_page.dart';
 
 class AdminNavigationDrawer extends StatelessWidget {
   @override
@@ -69,6 +70,22 @@ class AdminNavigationDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => AdminBusRoutesPage()),
+                );
+              },
+            ),
+
+            _buildDrawerItem(
+              context: context,
+              icon: Icons.feedback_outlined,
+              title: 'User Feedback',
+              subtitle: 'Review user submissions',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AdminFeedbackPage(),
+                  ),
                 );
               },
             ),
