@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'widgets/navigation_drawer.dart';
@@ -17,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   LocationData? _currentLocation;
   bool _loading = true;
-  late final MapController _mapController;
+  GoogleMapController? _mapController;
 
   final TextEditingController _startPointController = TextEditingController();
   final TextEditingController _endPointController = TextEditingController();
@@ -32,7 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _mapController = MapController();
     if (widget.enableLocation) {
       _getLocation();
     } else {
@@ -63,11 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentLocation = loc;
       _loading = false;
     });
-    Future.delayed(Duration(milliseconds: 500), () {
-      if (loc.latitude != null && loc.longitude != null && mounted) {
-        _mapController.move(LatLng(loc.latitude!, loc.longitude!), 13.0);
-      }
-    });
+    if (loc.latitude != null &&
+        loc.longitude != null &&
+        _mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLng(LatLng(loc.latitude!, loc.longitude!)),
+      );
+    }
   }
 
   Future<void> _searchRoute() async {
@@ -173,21 +173,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _setMarkersAndZoom() {
-    if (_routePoints.isNotEmpty) {
+    if (_routePoints.isNotEmpty && _mapController != null) {
       _startMarker = _routePoints.first;
       _endMarker = _routePoints.last;
 
-      Future.delayed(Duration(milliseconds: 300), () {
-        if (mounted) {
-          _mapController.move(
-            LatLng(
-              (_startMarker!.latitude + _endMarker!.latitude) / 2,
-              (_startMarker!.longitude + _endMarker!.longitude) / 2,
-            ),
-            12.0,
-          );
-        }
-      });
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLng(
+          LatLng(
+            (_startMarker!.latitude + _endMarker!.latitude) / 2,
+            (_startMarker!.longitude + _endMarker!.longitude) / 2,
+          ),
+        ),
+      );
     }
   }
 
@@ -352,124 +349,71 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMapSection(LatLng center) {
+    Set<Marker> markers = {};
+
+    if (_currentLocation != null) {
+      markers.add(
+        Marker(
+          markerId: MarkerId('currentLocation'),
+          position: LatLng(
+            _currentLocation!.latitude!,
+            _currentLocation!.longitude!,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: InfoWindow(title: 'You'),
+        ),
+      );
+    }
+
+    if (_startMarker != null) {
+      markers.add(
+        Marker(
+          markerId: MarkerId('start'),
+          position: _startMarker!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueGreen,
+          ),
+          infoWindow: InfoWindow(title: 'START'),
+        ),
+      );
+    }
+
+    if (_endMarker != null) {
+      markers.add(
+        Marker(
+          markerId: MarkerId('end'),
+          position: _endMarker!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueOrange,
+          ),
+          infoWindow: InfoWindow(title: 'END'),
+        ),
+      );
+    }
+
+    Set<Polyline> polylines = {};
+    if (_routePoints.length > 1) {
+      polylines.add(
+        Polyline(
+          polylineId: PolylineId('route'),
+          points: _routePoints,
+          color: Colors.blue,
+          width: 5,
+        ),
+      );
+    }
+
     return Expanded(
       flex: 3,
-      child: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(center: center, zoom: 13.0),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                subdomains: ['a', 'b', 'c'],
-              ),
-              if (_routePoints.isNotEmpty)
-                PolylineLayer(
-                  polylines: [
-                    Polyline(
-                      points: _routePoints,
-                      strokeWidth: 5.0,
-                      color: Colors.blue,
-                      borderStrokeWidth: 2.0,
-                      borderColor: Colors.blue.shade900,
-                    ),
-                  ],
-                ),
-              MarkerLayer(
-                markers: [
-                  if (_currentLocation != null)
-                    Marker(
-                      point: LatLng(
-                        _currentLocation!.latitude!,
-                        _currentLocation!.longitude!,
-                      ),
-                      width: 40,
-                      height: 40,
-                      builder: (ctx) =>
-                          Icon(Icons.my_location, color: Colors.red, size: 40),
-                    ),
-                  if (_startMarker != null)
-                    Marker(
-                      point: _startMarker!,
-                      width: 50,
-                      height: 50,
-                      builder: (ctx) => Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'START',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.location_on,
-                            color: Colors.green,
-                            size: 35,
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (_endMarker != null)
-                    Marker(
-                      point: _endMarker!,
-                      width: 50,
-                      height: 50,
-                      builder: (ctx) => Column(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'END',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Icon(Icons.location_on, color: Colors.red, size: 35),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: Material(
-              color: Colors.white,
-              shape: CircleBorder(),
-              elevation: 6,
-              child: IconButton(
-                icon: Icon(Icons.my_location, color: Colors.teal, size: 28),
-                onPressed: _getLocation,
-              ),
-            ),
-          ),
-        ],
+      child: GoogleMap(
+        initialCameraPosition: CameraPosition(target: center, zoom: 13.0),
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
+        markers: markers,
+        polylines: polylines,
+        onMapCreated: (controller) {
+          _mapController = controller;
+        },
       ),
     );
   }
