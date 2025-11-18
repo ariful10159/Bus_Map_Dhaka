@@ -54,8 +54,14 @@ about timing or fare changes.''',
             const SizedBox(height: 24),
             _buildSection(
               title: 'Contact & Support',
-              body:
-                  'Need help or want to suggest a feature? Reach us at support@busmapdhaka.com or follow our updates on facebook.com/busmapdhaka.',
+              body: '''Have questions, ideas, or found incorrect route data?
+Reach out anytime:
+
+• Name: Ariful Islam Masum
+• Phone: 01823139965
+• Email: ug2102032@gmail.com
+• WhatsApp/Telegram: 01823139965
+• Address: Bijoy 24 Hall, Patuakhali Science and Technology University''',
             ),
             const SizedBox(height: 32),
             const Text(
