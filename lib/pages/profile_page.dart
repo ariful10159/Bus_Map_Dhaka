@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -66,6 +67,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _pickImage() async {
     try {
+      final granted = await _ensureGalleryPermission();
+      if (!granted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please allow gallery permission to pick an image.'),
+          ),
+        );
+        return;
+      }
       final picker = ImagePicker();
       final picked = await picker.pickImage(source: ImageSource.gallery);
       if (picked == null) {
@@ -85,6 +96,22 @@ class _ProfilePageState extends State<ProfilePage> {
         const SnackBar(content: Text('Something went wrong picking image.')),
       );
     }
+  }
+
+  Future<bool> _ensureGalleryPermission() async {
+    if (Platform.isIOS) {
+      final status = await Permission.photos.request();
+      return status.isGranted;
+    }
+
+    if (Platform.isAndroid) {
+      final photoStatus = await Permission.photos.request();
+      if (photoStatus.isGranted) return true;
+      final storageStatus = await Permission.storage.request();
+      return storageStatus.isGranted;
+    }
+
+    return true;
   }
 
   Future<String?> _uploadImage(User user) async {
