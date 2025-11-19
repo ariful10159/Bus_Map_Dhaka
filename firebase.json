@@ -1,1 +1,26 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"busmapdhaka-471121","appId":"1:316084797142:android:abf146bc4a6e70e0d49377","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"busmapdhaka-471121","configurations":{"android":"1:316084797142:android:abf146bc4a6e70e0d49377","web":"1:316084797142:web:07f04debe12b34add49377","windows":"1:316084797142:web:11655f8838fbd883d49377"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "busmapdhaka-471121",
+          "appId": "1:316084797142:android:abf146bc4a6e70e0d49377",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "busmapdhaka-471121",
+          "configurations": {
+            "android": "1:316084797142:android:abf146bc4a6e70e0d49377",
+            "web": "1:316084797142:web:07f04debe12b34add49377",
+            "windows": "1:316084797142:web:11655f8838fbd883d49377"
+          }
+        }
+      }
+    }
+  }
+}

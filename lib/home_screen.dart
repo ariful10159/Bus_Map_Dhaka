@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart' as loc;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geocoding/geocoding.dart' as geo;
+import 'package:http/http.dart' as http;
+
 import 'widgets/navigation_drawer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,9 +21,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  LocationData? _currentLocation;
+  loc.LocationData? _currentLocation;
   bool _loading = true;
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
 
   final TextEditingController _startPointController = TextEditingController();
   final TextEditingController _endPointController = TextEditingController();
@@ -39,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _getLocation() async {
-    Location location = Location();
+    loc.Location location = loc.Location();
     bool serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await location.requestService();
@@ -48,25 +55,29 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
     }
-    PermissionStatus permissionGranted = await location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
+    loc.PermissionStatus permissionGranted = await location.hasPermission();
+    if (permissionGranted == loc.PermissionStatus.denied) {
       permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
+      if (permissionGranted != loc.PermissionStatus.granted) {
         setState(() => _loading = false);
         return;
       }
     }
-    final loc = await location.getLocation();
+    final locationData = await location.getLocation();
     setState(() {
-      _currentLocation = loc;
+      _currentLocation = locationData;
       _loading = false;
     });
-    if (loc.latitude != null &&
-        loc.longitude != null &&
-        _mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLng(LatLng(loc.latitude!, loc.longitude!)),
+    if (locationData.latitude != null && locationData.longitude != null) {
+      final currentPoint = LatLng(
+        locationData.latitude!,
+        locationData.longitude!,
       );
+      Future.microtask(() {
+        if (mounted) {
+          _mapController.move(currentPoint, 13);
+        }
+      });
     }
   }
 
@@ -92,21 +103,69 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
+      final startLocation = await _geocodeAddress(startPoint);
+      final endLocation = await _geocodeAddress(endPoint);
+
+      if (startLocation == null || endLocation == null) {
+        setState(() {
+          _errorMessage =
+              'স্থান খুঁজে পাওয়া যায়নি। অনুগ্রহ করে সঠিক নাম লিখুন।';
+          _isSearching = false;
+        });
+        return;
+      }
+
+      final defaultRoute = [
+        startLocation,
+        LatLng(
+          (startLocation.latitude + endLocation.latitude) / 2,
+          (startLocation.longitude + endLocation.longitude) / 2,
+        ),
+        endLocation,
+      ];
+
       final querySnapshot = await FirebaseFirestore.instance
           .collection('bus_routes')
-          .where('startPoint', isEqualTo: startPoint)
-          .where('endPoint', isEqualTo: endPoint)
           .get();
 
-      if (querySnapshot.docs.isEmpty) {
-        setState(() {
-          _errorMessage = 'কোন route পাওয়া যায়নি। Sample data দেখানো হচ্ছে।';
-          _loadPlaceholderData();
-        });
-      } else {
-        List<Map<String, dynamic>> fetchedBuses = [];
+      debugPrint('Firestore fetched ${querySnapshot.docs.length} documents');
 
-        for (var doc in querySnapshot.docs) {
+      final searchStart = startPoint.toLowerCase().trim();
+      final searchEnd = endPoint.toLowerCase().trim();
+
+      final matchingDocs = querySnapshot.docs.where((doc) {
+        final data = doc.data();
+        final docStartPoint = (data['startPoint'] ?? '')
+            .toString()
+            .toLowerCase()
+            .trim();
+        final docEndPoint = (data['endPoint'] ?? '')
+            .toString()
+            .toLowerCase()
+            .trim();
+        debugPrint(
+          'Comparing: "$docStartPoint" vs "$docEndPoint" with "$searchStart" vs "$searchEnd"',
+        );
+        return docStartPoint == searchStart && docEndPoint == searchEnd;
+      }).toList();
+      
+      debugPrint('Found ${matchingDocs.length} matching bus routes');
+
+      if (matchingDocs.isEmpty) {
+        setState(() {
+          _errorMessage =
+              'এই রুটে কোনো বাস খুঁজে পাওয়া যায়নি। (No bus found for this route)';
+          _buses = [];
+          _startMarker = startLocation;
+          _endMarker = endLocation;
+          _routePoints = defaultRoute;
+        });
+        _setMarkersAndZoom(defaultRoute);
+      } else {
+        final fetchedBuses = <Map<String, dynamic>>[];
+        final computedRoute = <LatLng>[];
+
+        for (final doc in matchingDocs) {
           final data = doc.data();
           fetchedBuses.add({
             'busName': data['busName'] ?? 'Unknown Bus',
@@ -115,27 +174,105 @@ class _HomeScreenState extends State<HomeScreen> {
             'nextArrival': _calculateNextArrival(data['schedule']),
           });
 
-          if (data.containsKey('routePath') && data['routePath'] is List) {
-            List<dynamic> pathData = data['routePath'];
-            _routePoints = pathData.map((point) {
-              return LatLng(point['lat'] ?? 23.8103, point['lng'] ?? 90.4125);
-            }).toList();
+          if (data['routePath'] is List) {
+            final pathData = data['routePath'] as List;
+            final parsedPoints = pathData
+                .map((point) {
+                  if (point is Map) {
+                    final latValue = point['lat'] ?? point['latitude'];
+                    final lngValue =
+                        point['lng'] ?? point['lon'] ?? point['longitude'];
+                    final lat = latValue is num
+                        ? latValue.toDouble()
+                        : double.tryParse(latValue?.toString() ?? '');
+                    final lng = lngValue is num
+                        ? lngValue.toDouble()
+                        : double.tryParse(lngValue?.toString() ?? '');
+                    if (lat != null && lng != null) {
+                      return LatLng(lat, lng);
+                    }
+                  }
+                  return null;
+                })
+                .whereType<LatLng>()
+                .toList();
+
+            if (parsedPoints.isNotEmpty) {
+              computedRoute
+                ..clear()
+                ..addAll(parsedPoints);
+            }
           }
         }
 
         setState(() {
           _buses = fetchedBuses;
-          _setMarkersAndZoom();
+          _startMarker = startLocation;
+          _endMarker = endLocation;
+          _routePoints = computedRoute.isNotEmpty
+              ? computedRoute
+              : defaultRoute;
+          _errorMessage = '';
         });
+        _setMarkersAndZoom(_routePoints);
       }
     } catch (e) {
+      debugPrint('Route search error: $e');
       setState(() {
-        _errorMessage = 'Error: $e\nSample data দেখানো হচ্ছে।';
-        _loadPlaceholderData();
+        _errorMessage = 'Error: ${e.toString()}';
+        _buses = [];
+        _routePoints = [];
+        _startMarker = null;
+        _endMarker = null;
+        _isSearching = false;
       });
     } finally {
       setState(() => _isSearching = false);
     }
+  }
+
+  Future<LatLng?> _geocodeAddress(String place) async {
+    final query = '$place, Dhaka, Bangladesh';
+
+    try {
+      if (kIsWeb) {
+        final uri = Uri.parse(
+          'https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=1',
+        );
+        final response = await http.get(
+          uri,
+          headers: {
+            'User-Agent': 'bus_map_dhaka',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final decoded = jsonDecode(response.body);
+          if (decoded is List && decoded.isNotEmpty) {
+            final lat = double.tryParse(decoded.first['lat']?.toString() ?? '');
+            final lon = double.tryParse(
+              decoded.first['lon']?.toString() ??
+                  decoded.first['lng']?.toString() ??
+                  '',
+            );
+            if (lat != null && lon != null) {
+              return LatLng(lat, lon);
+            }
+          }
+        }
+        return null;
+      } else {
+        final locations = await geo.locationFromAddress(query);
+        if (locations.isNotEmpty) {
+          return LatLng(locations.first.latitude, locations.first.longitude);
+        }
+      }
+    } catch (e) {
+      debugPrint('Geocoding error: $e');
+    }
+
+    return null;
   }
 
   void _loadPlaceholderData() {
@@ -169,23 +306,28 @@ class _HomeScreenState extends State<HomeScreen> {
       LatLng(23.7600, 90.3900),
     ];
 
-    _setMarkersAndZoom();
+    _startMarker = _routePoints.first;
+    _endMarker = _routePoints.last;
+    _setMarkersAndZoom(_routePoints);
   }
 
-  void _setMarkersAndZoom() {
-    if (_routePoints.isNotEmpty && _mapController != null) {
-      _startMarker = _routePoints.first;
-      _endMarker = _routePoints.last;
+  void _setMarkersAndZoom([List<LatLng>? points]) {
+    final effectivePoints = points ?? _routePoints;
+    if (effectivePoints.isEmpty) return;
 
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLng(
-          LatLng(
-            (_startMarker!.latitude + _endMarker!.latitude) / 2,
-            (_startMarker!.longitude + _endMarker!.longitude) / 2,
-          ),
-        ),
-      );
-    }
+    final avgLat =
+        effectivePoints
+            .map((p) => p.latitude)
+            .reduce((value, element) => value + element) /
+        effectivePoints.length;
+    final avgLng =
+        effectivePoints
+            .map((p) => p.longitude)
+            .reduce((value, element) => value + element) /
+        effectivePoints.length;
+
+    final zoomLevel = effectivePoints.length > 1 ? 12.5 : 14.0;
+    _mapController.move(LatLng(avgLat, avgLng), zoomLevel);
   }
 
   String _calculateNextArrival(String? schedule) {
@@ -349,18 +491,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMapSection(LatLng center) {
-    Set<Marker> markers = {};
+    final markers = <Marker>[];
 
-    if (_currentLocation != null) {
+    if (_currentLocation?.latitude != null &&
+        _currentLocation?.longitude != null) {
       markers.add(
         Marker(
-          markerId: MarkerId('currentLocation'),
-          position: LatLng(
+          point: LatLng(
             _currentLocation!.latitude!,
             _currentLocation!.longitude!,
           ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: InfoWindow(title: 'You'),
+          width: 40,
+          height: 40,
+          builder: (context) =>
+              Icon(Icons.my_location, color: Colors.redAccent, size: 26),
         ),
       );
     }
@@ -368,12 +512,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_startMarker != null) {
       markers.add(
         Marker(
-          markerId: MarkerId('start'),
-          position: _startMarker!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueGreen,
-          ),
-          infoWindow: InfoWindow(title: 'START'),
+          point: _startMarker!,
+          width: 42,
+          height: 42,
+          builder: (context) => Icon(Icons.flag, color: Colors.green, size: 30),
         ),
       );
     }
@@ -381,39 +523,50 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_endMarker != null) {
       markers.add(
         Marker(
-          markerId: MarkerId('end'),
-          position: _endMarker!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange,
-          ),
-          infoWindow: InfoWindow(title: 'END'),
+          point: _endMarker!,
+          width: 42,
+          height: 42,
+          builder: (context) =>
+              Icon(Icons.flag, color: Colors.orange, size: 30),
         ),
       );
     }
 
-    Set<Polyline> polylines = {};
+    final polylines = <Polyline>[];
     if (_routePoints.length > 1) {
       polylines.add(
         Polyline(
-          polylineId: PolylineId('route'),
           points: _routePoints,
-          color: Colors.blue,
-          width: 5,
+          strokeWidth: 4,
+          color: Colors.blueAccent,
         ),
       );
     }
 
     return Expanded(
       flex: 3,
-      child: GoogleMap(
-        initialCameraPosition: CameraPosition(target: center, zoom: 13.0),
-        myLocationEnabled: true,
-        myLocationButtonEnabled: false,
-        markers: markers,
-        polylines: polylines,
-        onMapCreated: (controller) {
-          _mapController = controller;
-        },
+      child: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          center: center,
+          zoom: 12.5,
+          maxZoom: 18,
+          minZoom: 3,
+          onMapReady: () {
+            if (_routePoints.isNotEmpty) {
+              Future.microtask(() => _setMarkersAndZoom(_routePoints));
+            }
+          },
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            subdomains: const ['a', 'b', 'c'],
+            userAgentPackageName: 'com.busmapdhaka.app',
+          ),
+          if (polylines.isNotEmpty) PolylineLayer(polylines: polylines),
+          if (markers.isNotEmpty) MarkerLayer(markers: markers),
+        ],
       ),
     );
   }
